@@ -95,7 +95,7 @@ get_parent_iousb_device( io_object_t& serial_port )
     string name = get_class_name(device);
 
     // Walk the IO Registry tree looking for this devices parent IOUSBDevice.
-    while( name != "IOUSBDevice" )
+    while( name != "IOUSBDevice" && name != "IOUSBHostDevice" )
     {
         kern_result = IORegistryEntryGetParentEntry( device,
         kIOServicePlane,
@@ -175,12 +175,14 @@ get_int_property( io_object_t& device, const char* property )
         {
             if( CFGetTypeID(number) == CFNumberGetTypeID() )
             {
+                // IDs above 0x7FFF don't fit in SInt16, so read as SInt32
+                int32_t value = 0;
                 bool success = CFNumberGetValue( static_cast<CFNumberRef>(number),
-                    kCFNumberSInt16Type,
-                    &result );
+                    kCFNumberSInt32Type,
+                    &value );
 
-                if( !success )
-                    result = 0;
+                if( success )
+                    result = static_cast<uint16_t>(value);
             }
 
             CFRelease(number);
